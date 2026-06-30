@@ -1,3 +1,5 @@
+Copyright (C) 2026 ZionXiaoxiSuOGLocGo
+SPDX-License-Identifier: GPL-3.0-or-later
 # URP in Unity 6
 
 ## Pipeline Version
@@ -14,7 +16,7 @@
 - **Foveated Rendering**: For XR applications
 
 ## Changed Behaviour
-- Render Graph handles render textures lifecycle â€” don't manually create/release in Renderer Features
+- Render Graph handles render textures lifecycle â€?don't manually create/release in Renderer Features
 - Shader dependencies auto-resolved by Render Graph
 - Some 2022.3 Renderer Features are incompatible with Render Graph (must use RenderGraph-based passes)
 
@@ -33,7 +35,7 @@ class BlitRenderPass : ScriptableRenderPass {
 - Custom Renderer Features: rewrite using RecordRenderGraph if they use CommandBuffer directly
 - Adaptive Probe Volumes require scene re-baking
 - Check all shaders for compatibility (ShaderGraph auto-upgrades, hand-written shaders may need updates)
-- GPU Resident Drawer disabled by default â€” enable in URP Asset for CPU gains
+- GPU Resident Drawer disabled by default â€?enable in URP Asset for CPU gains
 
 ## Still Unchanged from 2022.3
 - Camera Stacking

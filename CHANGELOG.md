@@ -1,6 +1,8 @@
+Copyright (C) 2026 ZionXiaoxiSuOGLocGo
+SPDX-License-Identifier: GPL-3.0-or-later
 # unity-manual Changelog
 
-## [2.1.1] - 2026-06-30 ‚Äî Audit Bug Fixes
+## [2.1.1] - 2026-06-30 ‚Ä?Audit Bug Fixes
 **Source**: project-ledger quality audit
 
 ### Fixed
@@ -9,7 +11,7 @@
 - H3: Replace outdated namespace limitation with "lifted in 2022.2" note
 - H4: Fix fictitious `EditorSettings.ini` to real menu instructions
 - H5: Add missing `health` field declarations (x2 locations)
-- H6: Fix `Unity 2023+` ‚Üí `Unity 2022.2+ / Unity 6`
+- H6: Fix `Unity 2023+` ‚Ü?`Unity 2022.2+ / Unity 6`
 - H7: Add `Renderer` declaration to `FadeOut` coroutine
 - M2: Cache `WaitForSeconds` in coroutine example
 - M4: Fix undefined `impulse` variable
@@ -19,7 +21,7 @@
 - M11: Add Addressables note to Resources.LoadAll example
 - M13: Fix Fixed Timestep advice
 - M1: Replace duplicate SO Event Channel with cross-reference
-- L2: Fix lowercase "unity" ‚Üí "Unity"
+- L2: Fix lowercase "unity" ‚Ü?"Unity"
 - L4: Add SafeArea/notch handling note
 - L5: Update README line count
 
@@ -31,12 +33,12 @@
 
 ---
 
-## [2.1.0] - 2026-06-30 ‚Äî Anti-Patterns + Game Architecture + Retargeting + Mobile
+## [2.1.0] - 2026-06-30 ‚Ä?Anti-Patterns + Game Architecture + Retargeting + Mobile
 **Source**: project-ledger audit session
 
 ### Added
 - **Copyright + Version**: Copyright notice + SPDX identifier, version 2.1.0 metadata in frontmatter
-- **Animation ‚Üí Retargeting (Humanoid Avatar)**: Avatar setup/configuration workflow, muscle space masks, cross-model animation sharing, common issues
+- **Animation ‚Ü?Retargeting (Humanoid Avatar)**: Avatar setup/configuration workflow, muscle space masks, cross-model animation sharing, common issues
 - **Common Anti-Patterns** (new chapter): Physics transform-position misuse, Unity API misuse (FindObjectOfType in Update, GetComponent caching, LINQ in hot paths), event subscription leaks, GC allocation hotspots table with fixes
 - **Game Architecture Patterns** (new chapter): Finite State Machine (enum-based), Strategy Pattern via interface, Observer via ScriptableObject Event Channel (decoupled sender/listener)
 - **Input System Advanced** (new chapter): Action Map switching, runtime rebinding (InteractiveRebinding + PlayerPrefs persistence), touch input patterns, Enhanced Input touch bindings
@@ -45,7 +47,7 @@
 
 ---
 
-## [2.0] - 2026-06-20 ‚Äî Major Expansion
+## [2.0] - 2026-06-20 ‚Ä?Major Expansion
 **Source**: project-ledger audit session
 
 ### Added
@@ -60,9 +62,9 @@
 - **Time.timeScale & Pausing**: pause/slow-motion code, affected vs unaffected table, selective pausing pattern.
 - **Camera**: component properties table, scripting examples (ScreenPointToRay, WorldToScreenPoint), multi-camera setups (minimap, weapon overlay, split-screen, UI camera), Cinemachine quick-start.
 - **Lighting**: light types comparison, real-time vs baked vs mixed decision table, Light Probes and Reflection Probes, Tags & Layers reference.
-- **Physics vs Transform Movement**: the #1 beginner pitfall ‚Äî direct transform.position on Rigidbody ‚Äî with correct alternatives table.
+- **Physics vs Transform Movement**: the #1 beginner pitfall ‚Ä?direct transform.position on Rigidbody ‚Ä?with correct alternatives table.
 - **Raycasting**: full API (raycast, sphere/box cast, layer masks, RaycastAll), debug visualization, Blueprint equivalent note.
-- **2D Basics**: 3D‚Üí2D component mapping, Sprite Editor workflow, 2D physics API differences, sorting order hierarchy.
+- **2D Basics**: 3D‚Ü?D component mapping, Sprite Editor workflow, 2D physics API differences, sorting order hierarchy.
 - **VFX (Particle System)**: Shuriken module reference table, script control, VFX Graph introduction, Shuriken vs VFX Graph selection guide.
 - **Object Pooling**: full queue-based pool implementation, Unity built-in `ObjectPool<T>` reference, when-to-pool decision table.
 - **Addressables**: load-by-address and AssetReference patterns, Resources replacement benefits.
@@ -73,12 +75,12 @@
 ### Principles
 - Editor/Project Setup chapters for absolute beginners; coding chapters for intermediate.
 - Each section includes both theory (why) and concrete code (how).
-- Anti-patterns explicitly marked with ‚ùå and correct approaches with ‚úÖ.
+- Anti-patterns explicitly marked with ‚ù?and correct approaches with ‚ú?
 - Decision tables added where multiple valid approaches exist.
 
 ---
 
-## [1.0.0] - 2026-06-19 ‚Äî Initial Release
+## [1.0.0] - 2026-06-19 ‚Ä?Initial Release
 **Source**: openSkills project launch (created via skill-creator)
 
 ### Added
@@ -88,5 +90,5 @@
 
 ### Principles
 - Covers concept explanations and practical API patterns.
-- Version-aware ‚Äî separate reference files for 2022.3 LTS vs Unity 6.
+- Version-aware ‚Ä?separate reference files for 2022.3 LTS vs Unity 6.
 - Maintenance: update when encountering recurring bugs, version migrations, or new engine features.
