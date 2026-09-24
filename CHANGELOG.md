@@ -6,7 +6,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 **Source**: usage-driven audit — retrieval tests, gap tests, subagent blind tests
 
 ### Fixed
-- Restore CHANGELOG and URP reference bodies to pristine v2.1.1 content: the 2026-06-30 security pass re-encoded the files and corrupted every non-ASCII character (em-dashes, arrows, marks) into U+FFFD mojibake. Bodies are now byte-identical to the initial baseline; copyright headers re-applied.
+- Restore CHANGELOG and URP reference bodies to pristine v2.1.1 content: the 2026-06-30 security pass
+  re-encoded the files and corrupted every non-ASCII character (em-dashes, arrows, marks) into U+FFFD
+  mojibake. Bodies are now byte-identical to the initial baseline; copyright headers re-applied.
 - Remove Unreal Engine terminology bleed: `Enhanced Input` → `Input System` (Touch Input section), deleted UWorld/LineTrace cross-reference (Raycasting), deleted Compatible Skeleton comparison (Animation Retargeting)
 - Remove duplicated horizontal rule before Profiling & Debugging
 
@@ -100,7 +102,9 @@ SPDX-License-Identifier: GPL-3.0-or-later
 **Source**: openSkills project launch (created via skill-creator)
 
 ### Added
-- Unity engine core concepts: GameObject/Component architecture, scene management, render pipelines (URP/HDRP/Built-in), physics, animation system, UI Toolkit, uGUI, audio, input system (old + new), MonoBehaviour lifecycle, prefabs, ScriptableObject, coroutines, performance best practices.
+- Unity engine core concepts: GameObject/Component architecture, scene management, render pipelines
+  (URP/HDRP/Built-in), physics, animation system, UI Toolkit, uGUI, audio, input system (old + new),
+  MonoBehaviour lifecycle, prefabs, ScriptableObject, coroutines, performance best practices.
 - Version-specific references: `urp-2022.md` and `urp-unity6.md`.
 - 14.8KB SKILL.md, ~1,088 lines.
 

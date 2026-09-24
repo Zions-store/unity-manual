@@ -326,7 +326,9 @@ using MyGame.Player;  // then just: Controller controller;
 
 #### Namespace Limitation (Unity 2020.1–2022.1 only)
 
-In Unity versions prior to 2022.2, a single file could not contain MonoBehaviour classes from different namespaces. This restriction was **lifted in Unity 2022.2**. Since this skill targets 2022.3+, the limitation no longer applies. Old Asset Store packages may still contain this issue from pre-2022.2 projects.
+In Unity versions prior to 2022.2, a single file could not contain MonoBehaviour classes from different namespaces.
+This restriction was **lifted in Unity 2022.2**. Since this skill targets 2022.3+, the limitation no longer applies.
+Old Asset Store packages may still contain this issue from pre-2022.2 projects.
 
 ### Null Reference Handling
 
@@ -772,7 +774,10 @@ public class PlayerMove : MonoBehaviour {
 }
 ```
 
-Key properties: `Slope Limit` (default 45°), `Step Offset` (walkable stair height), `Skin Width` (collider padding — keep ≥ 0.01, lower only if the character appears to hover). `isGrounded` is only reliable **after** calling `Move()` in the same frame. Controllers are kinematic: they block movement but are not pushed by physics — apply knockback manually via `cc.Move()`.
+Key properties: `Slope Limit` (default 45°), `Step Offset` (walkable stair height), `Skin Width`
+(collider padding — keep ≥ 0.01, lower only if the character appears to hover). `isGrounded` is only
+reliable **after** calling `Move()` in the same frame. Controllers are kinematic: they block movement
+but are not pushed by physics — apply knockback manually via `cc.Move()`.
 
 ### Raycasting
 
@@ -996,7 +1001,8 @@ slider.onValueChanged.AddListener(OnVolumeChange);
 
 Canvas render modes: Screen Space Overlay, Screen Space Camera, World Space.
 
-**Anchors and scaling:** Select a UI element → Rect Transform → Anchor Presets. Anchors define how the element resizes/stretches when screen resolution changes. Hold Shift to set pivot, Alt to set position. For responsive layouts: Unity uses stretch anchors (the 4-arrow icon) to make UI fill a percentage of the screen.
+**Anchors and scaling:** Select a UI element → Rect Transform → Anchor Presets. Anchors define how the element resizes/stretches when screen resolution changes.
+Hold Shift to set pivot, Alt to set position. For responsive layouts: Unity uses stretch anchors (the 4-arrow icon) to make UI fill a percentage of the screen.
 
 **Canvas Scaler:** Controls how UI scales across resolutions → Constant Pixel Size (fixed), Scale With Screen Size (responsive, recommended), Constant Physical Size.
 
