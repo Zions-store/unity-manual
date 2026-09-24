@@ -1,7 +1,7 @@
 ---
 name: unity-manual
-version: 2.2.0
-description: Unity engine core concepts and best practices. Use when the user mentions Unity, GameObject, Component, MonoBehaviour, Scene, URP, HDRP, render pipeline, physics engine, animation system, Animator, UI Toolkit, uGUI, TextMeshPro, audio, Input System, prefab, ScriptableObject, camera, Cinemachine, 2D, Sprite, particle system, VFX, lighting, Light Probe, build, publish, async await, UniTask, Addressables, custom inspector, events, delegates, UnityEvent, timeScale, pause, Lerp, SmoothDamp, raycast, object pooling, singleton, save system, PlayerPrefs, save file, CharacterController, troubleshooting, editor crash, stuck importing, or is working on Unity game development tasks.
+version: 2.3.0
+description: Unity engine core concepts and best practices. Use when the user mentions Unity, GameObject, Component, MonoBehaviour, Scene, URP, HDRP, render pipeline, physics engine, animation system, Animator, UI Toolkit, uGUI, TextMeshPro, audio, Input System, prefab, ScriptableObject, camera, Cinemachine, 2D, Sprite, particle system, VFX, lighting, Light Probe, build, publish, async await, UniTask, Addressables, custom inspector, EditorWindow, events, delegates, UnityEvent, timeScale, pause, Lerp, SmoothDamp, raycast, object pooling, singleton, save system, PlayerPrefs, save file, CharacterController, NavMesh, pathfinding, joint, multiplayer, Netcode, WebGL, testing, troubleshooting, editor crash, stuck importing, or is working on Unity game development tasks.
 compatibility: unity-2022.3, unity-6
 ---
 
@@ -15,6 +15,25 @@ Covers Unity core concepts, API patterns, and best practices across versions fro
 ## When to Use This Skill
 
 Use this skill whenever the user asks about Unity development — writing scripts, designing scenes, debugging, optimizing, or understanding engine behaviour. This skill provides the mental model of how Unity works, not just API signatures.
+
+## Symptom Router
+
+| Symptom / Task | Go to |
+|---|---|
+| Rigidbody movement stutters or tunnels | §Physics — Physics vs Transform Movement |
+| Speed differs between machines/framerates | §C# Scripting Basics — Time.deltaTime |
+| Lerp never reaches the target | §Lerp / SmoothDamp / MoveTowards |
+| NullReferenceException on a component | §Null Reference Handling |
+| NullReferenceException after an object dies | §Events & Delegates (unsubscribe in OnDisable) |
+| Text looks legacy / TMP upgrade questions | §TextMeshPro (TMP) |
+| Player progress lost between sessions | §Data Persistence & Save System |
+| Editor stuck importing / crashes / won't open | §Editor Troubleshooting |
+| Custom Renderer Features broke after upgrading | references/urp-unity6.md — Upgrading from 2022.3 |
+| Input stops responding after opening a menu | Input System — Action Map Switching |
+| Player wants to remap keys at runtime | Input System — Runtime Rebinding |
+| Game slows down over time | §Object Pooling + §GC Allocation Hotspots |
+| Enemy walks through walls / can't reach player | §Physics — NavMesh (Pathfinding) |
+| Player character without Rigidbody | §Physics — CharacterController |
 
 ## Editor Basics
 
@@ -515,6 +534,83 @@ Objects that persist across scene loads (audio managers, game state). Creates a 
 void Awake() { DontDestroyOnLoad(gameObject); }
 ```
 
+### Gamepad Vibration
+
+```csharp
+Gamepad.current.SetMotorSpeeds(lowFrequency: 0.5f, highFrequency: 1.0f);
+InputSystem.ResetHaptics();          // call on disable / scene teardown
+```
+
+
+### Action Map Switching
+
+```csharp
+using UnityEngine.InputSystem;
+
+PlayerInput playerInput;
+
+void Start()
+{
+    playerInput = GetComponent<PlayerInput>();
+    playerInput.SwitchCurrentActionMap("UI"); // switch to UI controls
+    playerInput.SwitchCurrentActionMap("Gameplay"); // switch back
+}
+
+// Multiple control schemes per action map:
+// Edit InputAction asset → Control Schemes → add Keyboard&Mouse, Gamepad, Touch
+// PlayerInput auto-switches scheme based on active device
+```
+
+### Runtime Rebinding
+
+```csharp
+using UnityEngine.InputSystem;
+
+InputAction moveAction;
+
+void StartRebind()
+{
+    moveAction.PerformInteractiveRebinding()
+        .WithControlsExcluding("Mouse") // don't rebind mouse
+        .OnMatchWaitForAnother(0.1f)    // wait for combo inputs
+        .OnComplete(op => {
+            Debug.Log($"Rebound to: {op.selectedControl}");
+            SaveBindingOverride(moveAction);
+            op.Dispose();
+        })
+        .Start();
+}
+
+void SaveBindingOverride(InputAction action)
+{
+    var rebinds = action.actionMap.SaveBindingOverridesAsJson();
+    PlayerPrefs.SetString("rebinds", rebinds);
+}
+
+void LoadBindingOverrides()
+{
+    var rebinds = PlayerPrefs.GetString("rebinds");
+    moveAction.actionMap.LoadBindingOverridesFromJson(rebinds);
+}
+```
+
+### Touch Input
+
+```csharp
+// Direct device access
+Touchscreen touch = Touchscreen.current;
+if (touch != null && touch.primaryTouch.press.isPressed)
+{
+    Vector2 touchPos = touch.primaryTouch.position.ReadValue();
+    Ray ray = Camera.main.ScreenPointToRay(touchPos);
+    if (Physics.Raycast(ray, out RaycastHit hit))
+        HandleTouch(hit.point);
+}
+
+// Input System touch bindings:
+// Bind Touchscreen's Primary Touch/Position to a Vector2 action
+// Tap/gesture detection via Input Actions' Interactions (Tap, Hold, MultiTap)
+```
 ### Version Notes
 
 - SceneManager API stable across 2022.3 → Unity 6
@@ -562,19 +658,30 @@ if (screenPos.z > 0) // in front of camera
 
 ### Cinemachine
 
-For advanced camera behaviors (follow, look-at, shake, transitions):
+For advanced camera behaviors (follow, look-at, shake, transitions). Requires the Cinemachine package.
 
 ```csharp
-using Cinemachine; // requires Cinemachine package
+// Cinemachine 3.x (Unity 6 default) — note the namespace change
+using Unity.Cinemachine;
 
-// Virtual camera that follows a target
-CinemachineVirtualCamera vcam;
+CinemachineCamera vcam;              // renamed from CinemachineVirtualCamera (2.x)
 vcam.Follow = player.transform;
 vcam.LookAt = player.transform;
 
-// Camera shake
-vcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>().m_AmplitudeGain = 2f;
+// Camera shake — noise components are plain Unity components in 3.x
+var noise = GetComponent<CinemachineBasicMultiChannelPerlin>();
+noise.AmplitudeGain = 2f;
 ```
+
+**2.x → 3.x migration** (2022.3 projects may still use Cinemachine 2.x; both API families exist):
+
+| Cinemachine 2.x (2022.3) | Cinemachine 3.x (Unity 6 default) |
+|---|---|
+| `using Cinemachine;` | `using Unity.Cinemachine;` |
+| `CinemachineVirtualCamera` | `CinemachineCamera` |
+| `CinemachineFreeLook` (3 rigs) | single `CinemachineCamera` + `CinemachineOrbitalFollow` |
+| `vcam.GetCinemachineComponent<T>()` | plain `GetComponent<T>()` (components live on the same GameObject) |
+| `m_AmplitudeGain` field | `AmplitudeGain` property |
 
 Cinemachine handles blending, collision detection, and dead zones — use it instead of manual camera scripting for complex setups.
 
@@ -727,6 +834,34 @@ void OnTriggerEnter(Collider other) { }
 
 Use Edit → Project Settings → Physics → Layer Collision Matrix to disable collisions between specific layers. Performance-critical for complex scenes.
 
+### Joints (Connecting Rigidbodies)
+
+Connect two Rigidbodies (or one to the world with a static anchor):
+
+| Joint | Use for | Key properties |
+|---|---|---|
+| **FixedJoint** | Weld two bodies (crate strapped to a vehicle) | `breakForce` |
+| **HingeJoint** | Doors, lids, wheels, pendulums | `axis`, `limits`, `useMotor` |
+| **SpringJoint** | Ropes, bungee, suspension | `spring`, `damper`, `minDistance`/`maxDistance` |
+| **CharacterJoint** | Ragdoll limbs | swing/twist limits |
+| **ConfigurableJoint** | Full control per axis (vehicles, machines) | locks/limits/drives |
+| 2D equivalents: `HingeJoint2D`, `SpringJoint2D`, ... | same concepts in Box2D | — |
+
+```csharp
+// Motorized door hinge
+HingeJoint hinge = GetComponent<HingeJoint>();
+JointMotor motor = hinge.motor;
+motor.targetVelocity = 90f;   // degrees per second
+motor.force = 100f;
+hinge.motor = motor;          // struct copy — reassign after modifying!
+hinge.useMotor = true;
+
+// Breakable connection
+hinge.breakForce = 500f;      // joint auto-destroys above this force
+```
+
+Joints act in FixedUpdate. React to breakage with `void OnJointBreak(float force) {}` on the same GameObject.
+
 ### Physics vs Transform Movement
 
 The #1 beginner pitfall: moving a Rigidbody by changing `transform.position` directly.
@@ -783,6 +918,39 @@ Key properties: `Slope Limit` (default 45°), `Step Offset` (walkable stair heig
 (collider padding — keep ≥ 0.01, lower only if the character appears to hover). `isGrounded` is only
 reliable **after** calling `Move()` in the same frame. Controllers are kinematic: they block movement
 but are not pushed by physics — apply knockback manually via `cc.Move()`.
+
+### NavMesh (Pathfinding)
+
+AI movement over baked walkable surfaces.
+
+**Setup:** add the **AI Navigation** package → add a `NavMeshSurface` component to ground objects → **Bake**. (The legacy Window → AI → Navigation window still works but is marked Obsolete.)
+
+```csharp
+using UnityEngine.AI;
+
+NavMeshAgent agent;                    // add a NavMeshAgent component to the enemy prefab
+[SerializeField] Transform target;
+
+void Awake() { agent = GetComponent<NavMeshAgent>(); }
+
+void Update() {
+    agent.SetDestination(target.position);
+
+    if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance
+        && (!agent.hasPath || agent.velocity.sqrMagnitude < 0.1f))
+        OnArrived();                   // reached the target
+}
+```
+
+| Property | Purpose |
+|---|---|
+| `speed` / `acceleration` / `angularSpeed` | Agent movement (independent of Rigidbody) |
+| `stoppingDistance` | Stop this far from the destination |
+| `autoBraking` | Slow down when nearing the goal |
+| `avoidancePriority` | Who yields when agents overlap (lower value yields) |
+
+Gotchas: agents move via transform, not physics — they pass through Rigidbody obstacles unless you add collision checks.
+Teleport with `agent.Warp(pos)` (raw transform changes desync the agent). After re-baking, paths may be stale — call `agent.ResetPath()`.
 
 ### Raycasting
 
@@ -1011,6 +1179,8 @@ Canvas render modes: Screen Space Overlay, Screen Space Camera, World Space.
 Hold Shift to set pivot, Alt to set position. For responsive layouts: Unity uses stretch anchors (the 4-arrow icon) to make UI fill a percentage of the screen.
 
 **Canvas Scaler:** Controls how UI scales across resolutions → Constant Pixel Size (fixed), Scale With Screen Size (responsive, recommended), Constant Physical Size.
+
+**Long lists:** a `ScrollRect` with hundreds of instantiated rows will stall the UI thread — pool and recycle list items, or use a virtualized-list approach (only visible rows exist).
 
 ### TextMeshPro (TMP)
 
@@ -1294,6 +1464,50 @@ public class ObjectPool : MonoBehaviour
 
 ---
 
+## Multiplayer (Netcode for GameObjects)
+
+Client-server model: the **server** (a "host" is server + playing client) is authoritative; clients send commands and receive state.
+
+**Setup:** install **Netcode for GameObjects** + **Unity Transport** → add a `NetworkManager` component to one scene object
+→ add a `NetworkObject` component to every networked prefab → register those prefabs in NetworkManager's **Network Prefabs** list.
+
+```csharp
+using Unity.Netcode;
+
+// Start
+NetworkManager.Singleton.StartHost();      // or StartClient() / StartServer()
+
+// Spawn — networked objects use NetworkObject.Spawn(), never bare Instantiate
+GameObject go = Instantiate(playerPrefab, spawnPoint.position, Quaternion.identity);
+go.GetComponent<NetworkObject>().Spawn();
+
+// Server→all state sync (clients see changes automatically)
+NetworkVariable<int> score = new NetworkVariable<int>(0);
+score.Value = 10;
+
+// Client→server command
+[ServerRpc(RequireOwnership = false)]
+void SubmitMoveServerRpc(Vector3 pos) { /* server validates, then applies */ }
+
+// Server→clients one-shot event
+[Rpc(SendTo.ClientsAndHost)]
+void PlayEffectRpc(Vector3 at) { SpawnEffect(at); }
+
+void Update() {
+    if (!IsOwner) return;                  // each machine simulates; only the owner runs input
+    // movement code
+}
+```
+
+| Rule | Why |
+|---|---|
+| Spawn only via `NetworkObject.Spawn()` | bare `Instantiate` exists on one machine only |
+| Guard gameplay with `IsOwner` / `IsServer` | the same script runs on every machine |
+| The server validates everything clients send | clients are untrusted |
+| `NetworkVariable<T>` for state, RPCs for events | state syncs to late joiners; RPCs fire once |
+
+Scope note: this covers NGO basics. Relay, lobby, matchmaking, and dedicated servers are Unity Gaming Services topics.
+
 ## Addressables
 
 Modern asset management system (replaces the old `Resources` folder). Assets are loaded asynchronously by address, not by file path.
@@ -1414,6 +1628,18 @@ After building, the output folder contains:
 
 Distribute the entire folder — they all depend on each other.
 
+### WebGL Platform Notes
+
+| Concern | Setting / Action |
+|---|---|
+| Compression | Brotli (best ratio) or Gzip — Player Settings → Publishing Settings. The server must serve `.br`/`.gz` files with the right `Content-Encoding` header (use the generated `.htaccess`, nginx `brotli_static`/`gzip_static`, or a CDN that handles it) |
+| Memory | Browser heap is fixed at build time — size it generously in Publishing Settings; too small = Out-of-Memory crash, too large = slow tab start |
+| Threading | `Application.threadingModel = WebAssembly` (Unity 6) for multithreading — requires COOP/COEP cross-origin headers on the server |
+| Loading UX | The first download is tens of MB — customize the WebGL Template's progress bar so players see movement |
+| Mobile browsers | Heavy WebGL games often fail on phones; test early if mobile matters |
+
+Build output is cached by the browser (IndexedDB); redeploys propagate because data file names are hashed.
+
 ## Custom Inspector (Editor Scripting)
 
 Create custom Inspector UI for your scripts:
@@ -1452,6 +1678,40 @@ void ResetToSpawn() { transform.position = Vector3.zero; }
 ```
 
 Right-click the component in Inspector → `Reset Player`. Zero Editor scripting needed.
+
+### Custom Editor Window
+
+Standalone tool windows (spawn tools, batch operations):
+
+```csharp
+using UnityEditor;
+using UnityEngine;
+
+public class SpawnTool : EditorWindow
+{
+    [MenuItem("Tools/Spawn Tool")]               // top menu entry
+    public static void ShowWindow() => GetWindow<SpawnTool>("Spawn Tool");
+
+    private int count = 10;
+
+    private void OnGUI()                         // redraws on interaction, not per frame
+    {
+        count = EditorGUILayout.IntField("Count", count);
+        if (GUILayout.Button("Spawn Cubes"))
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var cube = GameObject.CreatePrimitive(PrimitiveType.Cube);
+                cube.transform.position = new Vector3(i * 2f, 0, 0);
+                Undo.RegisterCreatedObjectUndo(cube, "Spawn Cubes");  // Ctrl+Z support
+            }
+        }
+    }
+}
+```
+
+Place in an `Editor/` folder like custom inspectors. Use `EditorGUILayout` for auto-layout fields; prefer `SerializedObject`/`SerializedProperty`
+over direct field writes when modifying scene objects — it integrates with Undo and multi-object editing.
 
 ---
 
@@ -1746,77 +2006,6 @@ movement = new FlyMovement(); // power-up changes behaviour
 
 See §ScriptableObject → ScriptableObject as Event Channel for the full pattern with `IntEventSO`, `PlayerHealth`, and `HealthBarUI` examples. The same decoupling pattern applies to any event-driven architecture.
 
-## Input System Advanced
-
-### Action Map Switching
-
-```csharp
-using UnityEngine.InputSystem;
-
-PlayerInput playerInput;
-
-void Start()
-{
-    playerInput = GetComponent<PlayerInput>();
-    playerInput.SwitchCurrentActionMap("UI"); // switch to UI controls
-    playerInput.SwitchCurrentActionMap("Gameplay"); // switch back
-}
-
-// Multiple control schemes per action map:
-// Edit InputAction asset → Control Schemes → add Keyboard&Mouse, Gamepad, Touch
-// PlayerInput auto-switches scheme based on active device
-```
-
-### Runtime Rebinding
-
-```csharp
-using UnityEngine.InputSystem;
-
-InputAction moveAction;
-
-void StartRebind()
-{
-    moveAction.PerformInteractiveRebinding()
-        .WithControlsExcluding("Mouse") // don't rebind mouse
-        .OnMatchWaitForAnother(0.1f)    // wait for combo inputs
-        .OnComplete(op => {
-            Debug.Log($"Rebound to: {op.selectedControl}");
-            SaveBindingOverride(moveAction);
-            op.Dispose();
-        })
-        .Start();
-}
-
-void SaveBindingOverride(InputAction action)
-{
-    var rebinds = action.actionMap.SaveBindingOverridesAsJson();
-    PlayerPrefs.SetString("rebinds", rebinds);
-}
-
-void LoadBindingOverrides()
-{
-    var rebinds = PlayerPrefs.GetString("rebinds");
-    moveAction.actionMap.LoadBindingOverridesFromJson(rebinds);
-}
-```
-
-### Touch Input
-
-```csharp
-// Direct device access
-Touchscreen touch = Touchscreen.current;
-if (touch != null && touch.primaryTouch.press.isPressed)
-{
-    Vector2 touchPos = touch.primaryTouch.position.ReadValue();
-    Ray ray = Camera.main.ScreenPointToRay(touchPos);
-    if (Physics.Raycast(ray, out RaycastHit hit))
-        HandleTouch(hit.point);
-}
-
-// Input System touch bindings:
-// Bind Touchscreen's Primary Touch/Position to a Vector2 action
-// Tap/gesture detection via Input Actions' Interactions (Tap, Hold, MultiTap)
-```
 
 ## Shader Graph Basics
 
@@ -1951,11 +2140,72 @@ Draw Call #4: UIPanel (Canvas)
 
 ### Common Commands
 
+### Debug Visualization
+
+```csharp
+void OnDrawGizmos()                    // editor-only, drawn in Scene view (also when selected: OnDrawGizmosSelected)
+{
+    Gizmos.color = Color.red;
+    Gizmos.DrawWireSphere(attackOrigin.position, attackRange);
+}
+
+// Runtime rays visible in Scene (and Game, if Gizmos toggled on) for 2 seconds
+Debug.DrawRay(origin, direction, Color.green, 2f);
 ```
-Stats window → toggle real-time performance overlay
-Profiler → CPU Usage → search by MonoBehaviour name
-Frame Debugger → click draw call → highlights object in Scene View
+
+Screenshot of the game view: `ScreenCapture.CaptureScreenshot("shot.png")` — file lands in `Application.persistentDataPath` (relative path), written at end of frame.
+
+## Testing
+
+Unity Test Framework — **Window → General → Test Runner**.
+
+| Mode | Runs | For |
+|---|---|---|
+| **EditMode** | In the editor, without Play Mode | Pure logic, math, data rules |
+| **PlayMode** | Enters Play Mode | Coroutines, physics, scene interactions |
+
+Setup: install the **Test Framework** package → in Test Runner choose **Create EditMode Test Assembly Folder** (creates `Tests/` with an assembly definition).
+
+```csharp
+using NUnit.Framework;
+
+public class DamageTests
+{
+    [Test]                                     // EditMode: plain C#
+    public void Damage_ReducesHealth()
+    {
+        var stats = new Stats { health = 100 };
+        stats.ApplyDamage(30);
+        Assert.AreEqual(70, stats.health);
+    }
+
+    [TestCase(100, 30, 70)]
+    [TestCase(50, 50, 0)]
+    public void Damage_Parametrized(int start, int dmg, int expected) { /* ... */ }
+}
 ```
+
+```csharp
+using UnityEngine;
+using UnityEngine.TestTools;
+using NUnit.Framework;
+using System.Collections;
+
+public class PlayerPlayModeTests
+{
+    [UnityTest]                                // PlayMode: IEnumerator, can yield
+    public IEnumerator Knockback_MovesRigidbody()
+    {
+        var go = new GameObject();
+        var rb = go.AddComponent<Rigidbody>();
+        rb.AddForce(Vector3.forward * 10f, ForceMode.Impulse);
+        yield return new WaitForFixedUpdate(); // let the physics step run
+        Assert.Greater(rb.velocity.magnitude, 0.1f);
+    }
+}
+```
+
+Guideline: test pure logic (damage formulas, inventory rules) — keep it in classes that do **not** inherit MonoBehaviour so it stays testable. Testing MonoBehaviour glue is brittle and usually not worth it.
 
 ## Editor Troubleshooting
 
@@ -1992,3 +2242,4 @@ Update this skill when:
 - User discovers a non-obvious Unity behaviour → document
 - User switches Unity versions with breaking changes → update version notes
 - New Unity feature becomes part of user's workflow → add section
+

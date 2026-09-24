@@ -2,6 +2,29 @@ Copyright (C) 2026 ZionXiaoxiSuOGLocGo
 SPDX-License-Identifier: GPL-3.0-or-later
 # unity-manual Changelog
 
+## [Unreleased]
+
+## [2.3.0] - 2026-09-24 — Feature Coverage Round
+**Source**: functional gap scan (grep-based coverage audit across 15 feature domains)
+
+### Fixed
+- **Cinemachine API updated to 3.x** (Unity 6 default): `Unity.Cinemachine` namespace, `CinemachineCamera`,
+  plain `GetComponent<>()` for noise; added 2.x → 3.x naming table (old example would fail on Unity 6)
+
+### Added
+- **Symptom Router** table at the top — symptom → section one-liners for fast retrieval
+- **NavMesh (Pathfinding)** section — NavMeshAgent, arrival detection, AI Navigation package baking, agent gotchas
+- **Joints** section — Fixed/Hinge/Spring/Character/Configurable table + motorized hinge + breakForce example
+- **Multiplayer (Netcode for GameObjects)** chapter — setup, spawn, NetworkVariable, ServerRpc/Rpc, IsOwner guards
+- **WebGL Platform Notes** — compression headers, heap sizing, WASM threading, loading UX
+- **Custom Editor Window** — MenuItem/GetWindow/OnGUI minimal tool template with Undo support
+- **Testing** chapter — EditMode vs PlayMode, NUnit TestCase/UnityTest examples, testability guideline
+- Input System chapter now owns its advanced subsections in place (Action Map Switching, Runtime Rebinding,
+  Touch Input moved from the end-of-file "Input System Advanced" heading) plus a **Gamepad Vibration** note
+- Debug visualization note (OnDrawGizmos / Debug.DrawRay) and ScreenCapture one-liner
+- ScrollRect virtualization warning for long UI lists
+- Frontmatter keywords: NavMesh, pathfinding, joint, multiplayer, Netcode, WebGL, EditorWindow, testing, Cinemachine
+
 ## [2.2.0] - 2026-09-24 — Mojibake Restore + Usability Audit Round
 **Source**: usage-driven audit — retrieval tests, gap tests, subagent blind tests
 
