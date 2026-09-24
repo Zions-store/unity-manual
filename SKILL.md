@@ -541,7 +541,6 @@ Gamepad.current.SetMotorSpeeds(lowFrequency: 0.5f, highFrequency: 1.0f);
 InputSystem.ResetHaptics();          // call on disable / scene teardown
 ```
 
-
 ### Action Map Switching
 
 ```csharp
@@ -611,6 +610,7 @@ if (touch != null && touch.primaryTouch.press.isPressed)
 // Bind Touchscreen's Primary Touch/Position to a Vector2 action
 // Tap/gesture detection via Input Actions' Interactions (Tap, Hold, MultiTap)
 ```
+
 ### Version Notes
 
 - SceneManager API stable across 2022.3 → Unity 6
@@ -1632,7 +1632,7 @@ Distribute the entire folder — they all depend on each other.
 
 | Concern | Setting / Action |
 |---|---|
-| Compression | Brotli (best ratio) or Gzip — Player Settings → Publishing Settings. The server must serve `.br`/`.gz` files with the right `Content-Encoding` header (use the generated `.htaccess`, nginx `brotli_static`/`gzip_static`, or a CDN that handles it) |
+| Compression | Brotli (best ratio) or Gzip — Player Settings → Publishing Settings. The server must serve `.br`/`.gz` files with the correct `Content-Encoding` header (nginx `brotli_static`/`gzip_static`, the generated `.htaccess`, or a CDN) |
 | Memory | Browser heap is fixed at build time — size it generously in Publishing Settings; too small = Out-of-Memory crash, too large = slow tab start |
 | Threading | `Application.threadingModel = WebAssembly` (Unity 6) for multithreading — requires COOP/COEP cross-origin headers on the server |
 | Loading UX | The first download is tens of MB — customize the WebGL Template's progress bar so players see movement |
@@ -2006,7 +2006,6 @@ movement = new FlyMovement(); // power-up changes behaviour
 
 See §ScriptableObject → ScriptableObject as Event Channel for the full pattern with `IntEventSO`, `PlayerHealth`, and `HealthBarUI` examples. The same decoupling pattern applies to any event-driven architecture.
 
-
 ## Shader Graph Basics
 
 ### Creating a Shader
@@ -2242,4 +2241,3 @@ Update this skill when:
 - User discovers a non-obvious Unity behaviour → document
 - User switches Unity versions with breaking changes → update version notes
 - New Unity feature becomes part of user's workflow → add section
-
