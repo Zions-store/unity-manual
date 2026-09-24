@@ -1,7 +1,7 @@
 ---
 name: unity-manual
-version: 2.3.0
-description: Unity engine core concepts and best practices. Use when the user mentions Unity, GameObject, Component, MonoBehaviour, Scene, URP, HDRP, render pipeline, physics engine, animation system, Animator, UI Toolkit, uGUI, TextMeshPro, audio, Input System, prefab, ScriptableObject, camera, Cinemachine, 2D, Sprite, particle system, VFX, lighting, Light Probe, build, publish, async await, UniTask, Addressables, custom inspector, EditorWindow, events, delegates, UnityEvent, timeScale, pause, Lerp, SmoothDamp, raycast, object pooling, singleton, save system, PlayerPrefs, save file, CharacterController, NavMesh, pathfinding, joint, multiplayer, Netcode, WebGL, testing, troubleshooting, editor crash, stuck importing, or is working on Unity game development tasks.
+version: 2.4.0
+description: Unity engine core concepts and best practices. Use when the user mentions Unity, GameObject, Component, MonoBehaviour, Scene, URP, HDRP, render pipeline, physics engine, animation system, Animator, UI Toolkit, uGUI, TextMeshPro, audio, Input System, prefab, ScriptableObject, camera, Cinemachine, 2D, Sprite, SpriteAtlas, Tilemap, particle system, VFX, lighting, Light Probe, build, async await, UniTask, Addressables, custom inspector, EditorWindow, events, delegates, UnityEvent, timeScale, pause, Lerp, SmoothDamp, raycast, object pooling, singleton, save system, PlayerPrefs, save file, CharacterController, NavMesh, pathfinding, joint, physics material, WheelCollider, multiplayer, Netcode, WebGL, testing, Terrain, IL2CPP, Mono, VideoPlayer, XR, batch mode, command line, import settings, log files, troubleshooting, editor crash, stuck importing, or is working on Unity game development tasks.
 compatibility: unity-2022.3, unity-6
 ---
 
@@ -34,6 +34,13 @@ Use this skill whenever the user asks about Unity development — writing script
 | Game slows down over time | §Object Pooling + §GC Allocation Hotspots |
 | Enemy walks through walls / can't reach player | §Physics — NavMesh (Pathfinding) |
 | Player character without Rigidbody | §Physics — CharacterController |
+| Outdoor/landscape level needed | §Terrain |
+| Works in Editor, crashes on Android/iOS | §Scripting Backends (IL2CPP stripping) |
+| Video / cutscene playback | §Video Playback |
+| VR / AR / headset development | §XR (VR / AR) |
+| Texture memory too big on mobile | §Asset Import Essentials — platform overrides |
+| CI / automated builds | §Command Line & Batch Mode |
+| Sprites cause many draw calls | 2D — SpriteAtlas |
 
 ## Editor Basics
 
@@ -128,6 +135,21 @@ UserSettings/
 
 `.meta` files MUST be committed — they store import settings, references, and GUIDs.
 
+### Special Folders in Assets
+
+Folder names below are **reserved** — each carries compile/build semantics regardless of location (unless noted "root only"):
+
+| Folder | Semantics |
+|---|---|
+| `Editor/` | Editor-only code; **excluded from builds**. Scripts here can use `UnityEditor`. A `MonoBehaviour` defined inside cannot be attached in scenes. |
+| `Editor Default Resources/` (root only) | Loaded by `EditorGUIUtility.Load()` — editor assets referenced from editor code |
+| `Gizmos/` (root only) | Icons for `Gizmos.DrawIcon()` |
+| `Plugins/` | Native plugins & platform-specific code (special subfolder rules per platform) |
+| `Resources/` | Assets loadable at runtime via `Resources.Load("path")` — bypasses normal references; prefer Addressables/serialization for new code |
+| `StreamingAssets/` (root only) | Files copied **verbatim** into the build, untouched by importers — configs, video, SQLite. Path: `Application.streamingAssetsPath`. **Read-only at runtime**; on Android/Web it is a URL (`jar:` / `http:`) — load with `UnityWebRequest`, not `File.ReadAllText` |
+
+Hidden/ignored: folders starting with `.` or `~`, names ending in `~`, `cvs`, and `.tmp` files are never imported (except dot-folders inside StreamingAssets, which are copied).
+
 ## Package Manager
 
 Unity's modular system for adding features. **Window → Package Manager**.
@@ -146,6 +168,41 @@ Unity's modular system for adding features. **Window → Package Manager**.
 | **2D Tilemap Editor** | 2D tile-based level design |
 
 Click **Install** to add a package, **Update** for newer versions, **Remove** to uninstall.
+
+**Asset packages (`.unitypackage`):** portable bundles of assets + scripts, imported via **Assets → Import Package → Custom Package** (or double-click the file).
+Common for sharing tools outside the Package Manager; the importer lets you pick what to include.
+
+---
+
+## Asset Import Essentials
+
+Import settings live on the asset's Inspector (select the asset). They are stored in the `.meta` file — commit it.
+
+### Model Import (FBX/OBJ)
+
+Four tabs: **Model** (scale conversion, mesh compression, normals), **Rig** (animation type: None/Generic/Humanoid —
+Humanoid creates the Avatar for retargeting), **Animation** (clip slicing from takes), **Materials** (extract embedded
+materials/textures into real assets — click *Extract*; otherwise they stay hidden inside the FBX).
+
+### Texture Import
+
+| Setting | What to know |
+|---|---|
+| Texture Type | Default / **Sprite (2D and UI)** / Normal map / Lightmap / Single Channel (masks) — wrong type breaks usage (e.g. unmarked normal maps look flat) |
+| Texture Shape | 2D, Cube (skybox), 2D Array, 3D |
+| sRGB | Off for data textures (masks, normals); on for color |
+| Platform overrides | Per-platform **Max Size / Format / Compression** — the biggest lever for mobile memory; Default tab alone wastes memory on Android/iOS |
+
+### Audio Import
+
+| Setting | Options & trade-off |
+|---|---|
+| Load Type | **Decompress On Load** (RAM-heavy — Vorbis ≈×10 in memory, ADPCM ≈×3.5; fine for short SFX), **Compressed In Memory** (small CPU cost), **Streaming** (disk→buffer, ~200 KB overhead, for music/long clips) |
+| Compression Format | PCM (no loss, huge), ADPCM (cheap CPU, noisy), Vorbis/MP3 (small, standard) |
+| Force To Mono | Halves memory for non-positional SFX (+Normalize) |
+| Load In Background + Preload Audio Data | Avoid first-play hitches |
+
+Rule of thumb: short SFX → Decompress On Load + ADPCM/Vorbis + Force To Mono; music/ambience → Streaming + Vorbis.
 
 ---
 
@@ -203,6 +260,26 @@ Execution order is fixed. Understanding it prevents 90% of Unity timing bugs.
 - Physics in Update() → jittery movement. Use FixedUpdate().
 - Input in FixedUpdate() → missed inputs. Use Update().
 - Forgetting to unsubscribe events in OnDisable() → memory leaks and null reference errors.
+
+## Compilation & Domain Reload
+
+### How scripts compile
+
+1. Scripts in `Assets/` are grouped into **assemblies**. By default everything lands in `Assembly-CSharp.dll` (editor code in `Assembly-CSharp-Editor.dll`).
+2. **Assembly Definitions (`.asmdef`)** split code into separate, independently-compiled assemblies — changing one script only recompiles its assembly.
+   Add via right-click → Create → Assembly Definition; scripts reference each other across assemblies explicitly.
+   Standard practice for mid-size projects: one asmdef per module, references to shared/core asmdefs.
+3. Recompile happens when: a script changes and the Editor regains focus, scripts are imported, or you enter Play Mode (unless disabled — see below).
+
+### Domain reload & iteration speed
+
+On every recompile **and** on Play Mode enter, Unity performs a **domain reload**: the scripting domain tears down and rebuilds — all statics reset, all events cleared. That's why static singletons "lose" data between play sessions.
+
+**Faster iteration (Enter Play Mode Options):** Project Settings → Editor → **Enter Play Mode Settings** → enable **Reload Domain Off** —
+Play Mode starts much faster by skipping the reload. Trade-off: static fields keep values between play sessions —
+your code must reset statics itself (in Awake), or you get "it worked yesterday" ghost bugs.
+
+Compile errors lock Play Mode: fix them in Console first (see Safe Mode in Troubleshooting).
 
 ## C# Scripting Basics
 
@@ -862,6 +939,33 @@ hinge.breakForce = 500f;      // joint auto-destroys above this force
 
 Joints act in FixedUpdate. React to breakage with `void OnJointBreak(float force) {}` on the same GameObject.
 
+### Physics Materials (friction & bounciness)
+
+Surface properties assigned per-collider: **Assets → Create → Physics Material**, then drag onto a collider.
+Properties: `Dynamic Friction` / `Static Friction` (0–1, default 0.6), `Bounciness` (0–1), and
+`Friction Combine` / `Bounce Combine` modes (Average / Minimum / Multiply / Maximum) that decide which value wins
+when two colliders meet — e.g. Minimum friction for ice-on-anything. Note: renamed from `PhysicMaterial` to
+`PhysicsMaterial` in Unity 6 (old API name still exists as deprecated).
+
+### WheelCollider (Vehicles)
+
+Purpose-built collider for ground vehicles: built-in suspension + slip-based tire friction, paired with a visible wheel mesh.
+
+Key properties: `Mass` (20), `Radius` (0.5), `Suspension Distance` (0.3), `Suspension Spring` (Spring ≈35000, Damper ≈4500),
+`Forward Friction` / `Sideways Friction` curves (Extremum/Asymptote Slip+Value, `Stiffness` multiplier — 0 = ice),
+`Motor Torque` (drive), `Brake Torque`, `Steer Angle` (front wheels only).
+
+Typical setup: 4 WheelColliders as children of the car rigidbody, wheel **meshes** as separate children updated from `GetWorldPose()` each frame:
+
+```csharp
+void UpdateVisualWheel() {
+    wheelCol.GetWorldPose(out Vector3 pos, out Quaternion rot);
+    wheelMesh.SetPositionAndRotation(pos, rot);
+}
+```
+
+Pitfall: `Force App Point Distance` defaults to 0 (force at wheel base = rollover-prone); set it slightly below the center of mass for stability.
+
 ### Physics vs Transform Movement
 
 The #1 beginner pitfall: moving a Rigidbody by changing `transform.position` directly.
@@ -1007,6 +1111,23 @@ Unity has a dedicated 2D mode with specialized tools:
 
 Select a sprite asset → **Sprite Editor** button in Inspector. Slice sprite sheets into individual sprites via **Slice → Grid by Cell Size** or **Automatic**.
 
+### Tilemap Workflow
+
+Grid-based level painting: create **GameObject → 2D Object → Tilemap → Rect** (creates Grid + Tilemap child).
+Paint with **Window → 2D → Tile Palette**: drag tile sprites from a sliced spritesheet into the palette, then paint in Scene view.
+Layers: multiple Tilemap children under one Grid (background/foreground/collision).
+Add `Tilemap Collider 2D` for solid tiles, plus a `Rigidbody2D` (Static) on the Tilemap to batch all tile colliders into one body.
+
+### SpriteAtlas
+
+Packs many sprites into one texture to reduce draw calls and memory fragmentation.
+
+- Create: **Assets → Create → 2D → Sprite Atlas** → drag sprites/folders into **Objects for Packing**
+- **Master** atlas holds the real packing; a **Variant** derives a scaled-down copy (e.g. Scale 0.5 for low-res targets)
+- Packing options: `Allow Rotation` (turn **off** for UI/Canvas sprites), `Tight Packing`, `Padding` (default 4)
+- Platform overrides: Max Texture Size / Format / Compression like any texture
+- Runtime: sprites resolve into the atlas automatically; for `Include in Build = false` atlases load manually via `SpriteAtlasManager.atlasRequested`
+
 ### 2D Physics Differences
 
 ```csharp
@@ -1030,6 +1151,26 @@ Sprites render in order controlled by:
 3. **Distance from camera** (for transparent sort axis)
 
 Set in SpriteRenderer or via script: `spriteRenderer.sortingOrder = 5;`
+
+---
+
+## Terrain
+
+Landscape system for outdoor environments: **GameObject → 3D Object → Terrain** creates the Terrain GameObject + a Terrain asset.
+
+Editing happens through the **Terrain Inspector toolbar** in four modes: **Sculpt** (raise/lower/smooth heightmaps),
+**Paint Terrain** (material layers), **Paint Details** (grass/rocks), **Paint Trees** (instanced tree prefabs).
+Brush shortcuts: `,` / `.` cycle brushes, `[` / `]` resize, `-` / `=` opacity.
+
+| Task | How |
+|---|---|
+| Height sculpting | Sculpt tools → drag in Scene view; import heightmaps in Terrain settings |
+| Texturing | Paint Terrain → add Terrain Layers (albedo/normal/mask per layer) |
+| Trees / grass | Paint Trees / Paint Details — trees are prefabs with billboard LOD; grass is density painting |
+| Collision | `Terrain Collider` component (automatic) |
+| Performance | Tiled for culling; grass density is a big perf cost; keep tree LOD/billboards sane |
+
+Pitfall: pressing **F** over a Terrain focuses the cursor position, not the whole object. Heavier workflows (spline roads, noise stamping) live in the **Terrain Tools** package.
 
 ---
 
@@ -1150,6 +1291,25 @@ Package: **Visual Effect Graph**. GPU-based, handles millions of particles. Visu
 | Mobile / Built-in RP | Shuriken (VFX Graph not supported) |
 | Millions of particles | VFX Graph |
 
+### Line & Trail Renderers
+
+| Component | Use for |
+|---|---|
+| **LineRenderer** | Laser beams, trajectories, connection lines — a polyline of 3D points rendered as a strip |
+| **TrailRenderer** | Trails following a moving object (comets, sword swings, tire marks) |
+
+```csharp
+// Beam between two points
+LineRenderer lr = GetComponent<LineRenderer>();
+lr.positionCount = 2;
+lr.SetPosition(0, muzzle.position);
+lr.SetPosition(1, hit.point);
+lr.startWidth = 0.05f; lr.endWidth = 0.01f;
+lr.material = beamMaterial;            // use a particle/unlit material — default is white-magenta
+```
+
+TrailRenderer records positions over `time` seconds automatically — just attach it and let the object move; fade via its color gradient (`startColor`/`endColor` or the gradient curve).
+
 ---
 
 ## UI Toolkit vs uGUI
@@ -1252,6 +1412,27 @@ source.maxDistance = 50f;
 ### Audio Mixer
 
 Route audio through mixer groups for volume control, effects (reverb, EQ), and snapshot transitions. Useful for volume settings, pause menus, and dynamic mixing.
+
+## Video Playback
+
+**VideoPlayer** component plays a **Video Clip** asset or a URL (`http://` / `file://` / StreamingAssets path).
+
+| Setting | Options |
+|---|---|
+| Render Mode | Camera Far/Near Plane, **Render Texture** (UI screens), Material Override, API Only (`player.texture`) |
+| Audio Output | None / **Audio Source** / Direct / API Only |
+| Update Mode | DSP Time (audio-synced), Game Time (respects timeScale), Unscaled Game Time |
+| Playback | `Play()` / `Pause()` / `Stop()`, `isLooping`, `playbackSpeed` (0–10), `frame` / `Seek` |
+
+```csharp
+var player = gameObject.AddComponent<VideoPlayer>();
+player.url = System.IO.Path.Combine(Application.streamingAssetsPath, "intro.mp4");
+player.renderMode = VideoRenderMode.RenderTexture;
+player.targetTexture = screenRT;          // RawImage on the in-world TV
+player.Play();
+```
+
+Pitfall: **WebGL does not support Video Clip assets** — use URL sources there. With Audio Output = Audio Source, the AudioSource's own Play()/PlayOnAwake does not control the video's audio track.
 
 ## Input System
 
@@ -1508,6 +1689,19 @@ void Update() {
 
 Scope note: this covers NGO basics. Relay, lobby, matchmaking, and dedicated servers are Unity Gaming Services topics.
 
+## XR (VR / AR)
+
+XR = VR (fully virtual) / MR (virtual + real, interactive) / AR (overlaid on reality). In Unity 6 the engine ships only the **XR plug-in framework** — everything else arrives via packages:
+
+| Piece | Role |
+|---|---|
+| **XR Plug-in Management** (Project Settings → XR Plug-in Management) | Pick the provider plugin per platform: **OpenXR** (cross-platform standard), Oculus/Meta XR, ARCore/ARKit |
+| **AR Foundation** | Unified AR API over ARCore/ARKit (plane detection, image tracking, hit testing) |
+| **XR Interaction Toolkit (XRI)** | Interactor/Interactable model — grab, poke, teleport, UI pointing in VR |
+| Input | Hand controllers surface through the **Input System** as XR devices (Tracked Pose Driver binds device pose → GameObject) |
+
+Minimal VR setup: XR Plug-in Management → enable OpenXR → add **XR Origin (XR Rig)** prefab from XRI → bind controllers via Input System actions. Official samples: AR Foundation Samples and XRI Examples on GitHub.
+
 ## Addressables
 
 Modern asset management system (replaces the old `Resources` folder). Assets are loaded asynchronously by address, not by file path.
@@ -1639,6 +1833,26 @@ Distribute the entire folder — they all depend on each other.
 | Mobile browsers | Heavy WebGL games often fail on phones; test early if mobile matters |
 
 Build output is cached by the browser (IndexedDB); redeploys propagate because data file names are hashed.
+
+### Command Line & Batch Mode
+
+Headless automation (CI builds, asset processing) runs the Editor from a terminal:
+
+```
+Unity.exe -batchmode -quit -projectPath "C:\proj" -executeMethod BuildScript.PerformBuild -logFile -
+```
+
+| Flag | Purpose |
+|---|---|
+| `-batchmode` | No UI; required for CI |
+| `-quit` | Exit after the method finishes (async code may hang it) |
+| `-executeMethod` | `Namespace.Class.Method` — must be `static`, in an **Editor/ folder** script |
+| `-accept-apiupdate` | Also run the obsolete-API updater (forgetting this is the classic "CI build fails, editor works" trap) |
+| `-buildTarget <name>` | Switch platform (Android / StandaloneWindows64 / iOS / WebGL) |
+| `-logFile -` | Log to stdout (CI logs); otherwise a file path |
+| `-nographics` | No GPU (faster CI agents; breaks shaders/shadergraph bake) |
+
+Read your own CLI flags via `System.Environment.GetCommandLineArgs()`. A project directory cannot be open in the Editor and in batch mode at the same time.
 
 ## Custom Inspector (Editor Scripting)
 
@@ -1837,6 +2051,23 @@ void OnDestroy()
 ```
 
 ---
+
+## Scripting Backends (Mono vs IL2CPP)
+
+The backend compiles C# into runnable code. Switch in **Player Settings → Other Settings → Configuration → Scripting Backend**:
+
+| | Mono (JIT) | IL2CPP (AOT) |
+|---|---|---|
+| Compile | IL interpreted/JIT at runtime | IL → C++ → native machine code |
+| Iteration | Fast builds | Slow builds (needs C++ toolchain) |
+| Startup | Slower warmup | Faster, more predictable |
+| Platforms | Windows/macOS/Linux x64+Arm64, Android Armv7 only | **All platforms — iOS, consoles, Web are IL2CPP-only** |
+
+IL2CPP restrictions to know before they bite:
+
+- No `System.Reflection.Emit` / runtime codegen (`dynamic` is limited); heavy reflection on generics may need AOT hints
+- **Managed code stripping** removes members only reachable via reflection → preserve with `[Preserve]` attributes or a `link.xml` file, or you get "works in Editor, crashes on device"
+- Same .NET API surface as Mono via **API Compatibility Level** (.NET Standard 2.1 / .NET Framework) — set per project, keep it consistent across team
 
 ## Performance Best Practices
 
@@ -2229,6 +2460,21 @@ Guideline: test pure logic (damage formulas, inventory rules) — keep it in cla
 
 - Relaunch offers **scene recovery** — accept it to salvage unsaved scene changes
 - Substantial loss → check version control first; `Temp/` backups are unreliable (cleaned on next launch)
+
+### Player logs (built games)
+
+Standalone player logs mirror Editor.log per platform:
+
+| Platform | Path |
+|---|---|
+| Windows | `%USERPROFILE%\AppData\LocalLow\<Company>\<Product>\Player.log` |
+| macOS | `~/Library/Logs/<Company>/<Product>/Player.log` |
+| Linux | `~/.config/unity3d/<Company>/<Product>/Player.log` |
+| Android | `adb logcat -s Unity` |
+| iOS | Xcode console / attached device log |
+| Web | Browser JS console (no Player.log) |
+
+In code: `Application.consoleLogPath` gives the current path; the Console window's ⋮ menu has **Open Player Log / Open Editor Log** shortcuts.
 
 ### Safe Mode (Unity 2022.1+)
 

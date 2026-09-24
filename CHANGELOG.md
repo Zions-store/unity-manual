@@ -2,7 +2,24 @@ Copyright (C) 2026 ZionXiaoxiSuOGLocGo
 SPDX-License-Identifier: GPL-3.0-or-later
 # unity-manual Changelog
 
-## [Unreleased]
+## [2.4.0] - 2026-09-24 — Official-Manual Gap Analysis Round
+**Source**: full comparison against the Unity 6.0 official Manual (chapter-tree scan + 15 deep-read pages via subagents)
+
+### Added
+- **Special Folders in Assets** table — Editor/Resources/Plugins/StreamingAssets semantics, URL-only access on Android/Web, hidden-folder rules
+- **Asset Import Essentials** chapter — Model 4-tab rig/materials workflow, Texture Type/Shape/sRGB/platform overrides, Audio Load-Type memory table (Vorbis ≈×10 pitfall)
+- **Compilation & Domain Reload** chapter — asmdef basics, Enter Play Mode Options (Reload Domain Off) with its static-reset trade-off
+- **Scripting Backends (Mono vs IL2CPP)** chapter — platform support table, Reflection.Emit ban, stripping/[Preserve]/link.xml trap
+- **Terrain** chapter — four toolbar modes, brush shortcuts, tree/grass/collision, F-key focus pitfall
+- **Physics Materials** section — friction/bounce combine modes; PhysicMaterial→PhysicsMaterial Unity 6 rename note
+- **WheelCollider** section — suspension/slip-curve model, GetWorldPose mesh sync, Force App Point pitfall
+- **Video Playback** chapter — render/audio/update modes, WebGL URL-source restriction
+- **XR (VR/AR)** chapter — XR Plug-in Management + OpenXR + AR Foundation + XRI package map
+- **Command Line & Batch Mode** — CI recipe (-batchmode -quit -executeMethod), -accept-apiupdate trap
+- **Player logs** table (per-platform Player.log paths) in Troubleshooting
+- **Tilemap Workflow** and **SpriteAtlas** sections (2D chapter)
+- **Line & Trail Renderers** section (VFX chapter)
+- Symptom Router: 9 new symptom rows; frontmatter keywords +13
 
 ## [2.3.0] - 2026-09-24 — Feature Coverage Round
 **Source**: functional gap scan (grep-based coverage audit across 15 feature domains)
