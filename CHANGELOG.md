@@ -2,9 +2,21 @@ Copyright (C) 2026 ZionXiaoxiSuOGLocGo
 SPDX-License-Identifier: GPL-3.0-or-later
 # unity-manual Changelog
 
-## [Unreleased]
+## [2.2.0] - 2026-09-24 — Mojibake Restore + Usability Audit Round
+**Source**: usage-driven audit — retrieval tests, gap tests, subagent blind tests
+
 ### Fixed
 - Restore CHANGELOG and URP reference bodies to pristine v2.1.1 content: the 2026-06-30 security pass re-encoded the files and corrupted every non-ASCII character (em-dashes, arrows, marks) into U+FFFD mojibake. Bodies are now byte-identical to the initial baseline; copyright headers re-applied.
+- Remove Unreal Engine terminology bleed: `Enhanced Input` → `Input System` (Touch Input section), deleted UWorld/LineTrace cross-reference (Raycasting), deleted Compatible Skeleton comparison (Animation Retargeting)
+- Remove duplicated horizontal rule before Profiling & Debugging
+
+### Added
+- **TextMeshPro** section under UI (fixes self-contradiction: TMP is Unity 6 default, but UI chapter only taught legacy `Text`)
+- **Data Persistence & Save System** chapter (PlayerPrefs tier, JsonUtility + persistentDataPath save file with try/catch + version field, crash-safe write hardening)
+- **Editor Troubleshooting** chapter (stuck importing, ShaderCache, DX11 fallback, version mismatch, crash recovery, Safe Mode)
+- **CharacterController (No Rigidbody)** mini-section (Move + gravity pass, isGrounded timing, key properties)
+- urp-unity6.md: RenderGraph Compatibility Mode escape hatch note
+- Frontmatter keywords: TextMeshPro, save system, PlayerPrefs, save file, CharacterController, troubleshooting, editor crash, stuck importing; dropped redundant Shuriken / Input Manager
 
 ## [2.1.1] - 2026-06-30 — Audit Bug Fixes
 **Source**: project-ledger quality audit

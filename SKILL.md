@@ -1,7 +1,7 @@
 ---
 name: unity-manual
-version: 2.1.1
-description: Unity engine core concepts and best practices. Use when the user mentions Unity, GameObject, Component, MonoBehaviour, Scene, URP, HDRP, render pipeline, physics engine, animation system, Animator, UI Toolkit, uGUI, audio, Input System, Input Manager, prefab, ScriptableObject, camera, Cinemachine, 2D, Sprite, particle system, VFX, Shuriken, lighting, Light Probe, build, publish, async await, UniTask, Addressables, custom inspector, events, delegates, UnityEvent, timeScale, pause, Lerp, SmoothDamp, raycast, object pooling, singleton, or is working on Unity game development tasks.
+version: 2.2.0
+description: Unity engine core concepts and best practices. Use when the user mentions Unity, GameObject, Component, MonoBehaviour, Scene, URP, HDRP, render pipeline, physics engine, animation system, Animator, UI Toolkit, uGUI, TextMeshPro, audio, Input System, prefab, ScriptableObject, camera, Cinemachine, 2D, Sprite, particle system, VFX, lighting, Light Probe, build, publish, async await, UniTask, Addressables, custom inspector, events, delegates, UnityEvent, timeScale, pause, Lerp, SmoothDamp, raycast, object pooling, singleton, save system, PlayerPrefs, save file, CharacterController, troubleshooting, editor crash, stuck importing, or is working on Unity game development tasks.
 compatibility: unity-2022.3, unity-6
 ---
 
@@ -748,6 +748,32 @@ void FixedUpdate() { rb.MovePosition(rb.position + moveDir * speed * Time.fixedD
 | Purely visual (no collision, no physics) | `transform.Translate()` in Update |
 | Character controller (no Rigidbody) | `CharacterController.Move()` |
 
+### CharacterController (No Rigidbody)
+
+For player characters that need collision but not physics forces:
+
+```csharp
+[RequireComponent(typeof(CharacterController))]
+public class PlayerMove : MonoBehaviour {
+    CharacterController cc;
+    [SerializeField] float speed = 5f, gravity = -9.81f;
+    Vector3 velocity;
+
+    void Awake() { cc = GetComponent<CharacterController>(); }
+
+    void Update() {
+        Vector3 move = new Vector3(Input.GetAxis("Horizontal"), 0, Input.GetAxis("Vertical"));
+        cc.Move(move * speed * Time.deltaTime);
+
+        if (cc.isGrounded && velocity.y < 0) velocity.y = -2f; // stick to ground
+        velocity.y += gravity * Time.deltaTime;
+        cc.Move(velocity * Time.deltaTime); // separate gravity pass
+    }
+}
+```
+
+Key properties: `Slope Limit` (default 45°), `Step Offset` (walkable stair height), `Skin Width` (collider padding — keep ≥ 0.01, lower only if the character appears to hover). `isGrounded` is only reliable **after** calling `Move()` in the same frame. Controllers are kinematic: they block movement but are not pushed by physics — apply knockback manually via `cc.Move()`.
+
 ### Raycasting
 
 Fire a ray into the scene and get what it hits — essential for shooting, interaction, AI vision:
@@ -779,8 +805,6 @@ if (Physics.SphereCast(ray.origin, 0.5f, ray.direction, out hit, 10f)) { }
 // RaycastAll (get all hits along ray, sorted by distance)
 RaycastHit[] hits = Physics.RaycastAll(ray, 100f);
 ```
-
-**Unreal equivalent:** `UWorld::LineTraceSingleByChannel()` in C++, or the `Line Trace By Channel` node in Blueprints.
 
 ### Common Pitfall
 
@@ -876,7 +900,7 @@ Still functional but deprecated. Use Animator for new projects.
 
 ### Animation Retargeting (Humanoid Avatar)
 
-Unity's Humanoid Avatar system enables reusing animations across different characters, similar to Unreal's Compatible Skeleton retargeting:
+Unity's Humanoid Avatar system enables reusing animations across different characters:
 
 1. **Configure Avatar**: Select imported model → Rig tab → Animation Type: Humanoid → Apply. Unity auto-maps bones.
 2. **Verify mapping**: Click "Configure" → check bone assignment (head, spine, arms, legs). Fix unmapped bones (green = good, grey = missing).
@@ -975,6 +999,28 @@ Canvas render modes: Screen Space Overlay, Screen Space Camera, World Space.
 **Anchors and scaling:** Select a UI element → Rect Transform → Anchor Presets. Anchors define how the element resizes/stretches when screen resolution changes. Hold Shift to set pivot, Alt to set position. For responsive layouts: Unity uses stretch anchors (the 4-arrow icon) to make UI fill a percentage of the screen.
 
 **Canvas Scaler:** Controls how UI scales across resolutions → Constant Pixel Size (fixed), Scale With Screen Size (responsive, recommended), Constant Physical Size.
+
+### TextMeshPro (TMP)
+
+The standard text solution for new projects (ships with the uGUI package, default in Unity 6). Legacy `UnityEngine.UI.Text` above still works but is maintenance-only — prefer TMP for all new UI.
+
+```csharp
+using TMPro;
+
+// Canvas UI text (most common)
+TextMeshProUGUI label = GetComponent<TextMeshProUGUI>();
+label.text = "Hello";            // rich text: <b>bold</b> <i>italic</i> <size=120%>big</size>
+label.fontSize = 24f;
+
+// World-space 3D text
+TextMeshPro worldText = GetComponent<TextMeshPro>();
+
+// TMP equivalents of legacy controls
+TMP_InputField input = GetComponent<TMP_InputField>();
+TMP_Dropdown dropdown = GetComponent<TMP_Dropdown>();
+```
+
+First-time setup: **Window → TextMeshPro → Import TMP Essential Resources** (required once per project). Custom fonts go through **Font Asset Creator** (Window → TextMeshPro) — legacy `.ttf` fonts must be converted to TMP Font Assets.
 
 ### UI Toolkit (UIElements)
 
@@ -1263,6 +1309,60 @@ Benefits over `Resources`:
 - Remote asset bundles for live content updates
 - Memory management: `Addressables.Release()` to unload
 - Dependency tracking: shared assets loaded once
+
+## Data Persistence & Save System
+
+Three tiers, from simplest to most robust:
+
+### PlayerPrefs (settings only)
+
+```csharp
+PlayerPrefs.SetInt("volume", 80);
+int volume = PlayerPrefs.GetInt("volume", 50); // 50 = default if key missing
+PlayerPrefs.Save(); // otherwise flushed on OnApplicationQuit
+```
+
+Registry/plist-backed key-value store. Use for options, volume, keybinds. **Never for game progress** — user-wipeable, no structure, awkward for bulk data.
+
+### JSON Save File (typical game progress)
+
+```csharp
+using System;
+using System.IO;
+
+[Serializable]
+public class SaveData {
+    public int version = 1;      // for future migrations
+    public int level;
+    public float health;
+    public string playerPos;     // "x,y,z" — Vector3 has no JSON serial form
+}
+
+public static class SaveSystem {
+    public static string Path => System.IO.Path.Combine(Application.persistentDataPath, "save.json");
+
+    public static void Save(SaveData data) {
+        string json = JsonUtility.ToJson(data, prettyPrint: true);
+        File.WriteAllText(Path, json);
+    }
+
+    public static SaveData Load() {
+        if (!File.Exists(Path)) return new SaveData(); // first launch
+        try { return JsonUtility.FromJson<SaveData>(File.ReadAllText(Path)); }
+        catch (Exception) { return new SaveData(); }   // corrupted file → fresh start, never crash
+    }
+}
+```
+
+- `Application.persistentDataPath` — writable per-user folder, works on all platforms (Windows/Mac/mobile), survives app updates
+- `JsonUtility` serializes `[Serializable]` classes with primitive fields; **not** `Dictionary`, `DateTime`, or UnityEngine.Object references — store primitives and strings
+- `Vector3`/`Quaternion` are not directly serializable — store as `"x,y,z"` strings or three float fields
+
+### Hardening (when save loss matters)
+
+- Crash-safe write: write to `save.tmp` then `File.Replace()`/`File.Copy()` over `save.json`
+- Version field + migration: on load, if `data.version < current`, upgrade fields then re-save
+- Multiple slots: `string.Format("save_{0}.json", slot)`
 
 ## Build & Publish
 
@@ -1700,7 +1800,7 @@ if (touch != null && touch.primaryTouch.press.isPressed)
         HandleTouch(hit.point);
 }
 
-// Enhanced Input touch bindings:
+// Input System touch bindings:
 // Bind Touchscreen's Primary Touch/Position to a Vector2 action
 // Tap/gesture detection via Input Actions' Interactions (Tap, Hold, MultiTap)
 ```
@@ -1799,10 +1899,6 @@ void OnLowMemory() {
 - **Touch vs mouse**: Use `Input.touchSupported` to switch between touch/mouse paths.
 - **Notch/Cutout**: Use `Screen.safeArea` to constrain UI to non-obscured screen regions.
 
----
-
----
-
 ## Profiling & Debugging
 
 ### Profiler Window
@@ -1847,6 +1943,34 @@ Stats window → toggle real-time performance overlay
 Profiler → CPU Usage → search by MonoBehaviour name
 Frame Debugger → click draw call → highlights object in Scene View
 ```
+
+## Editor Troubleshooting
+
+### Editor stuck importing / hangs at startup
+
+1. Close Unity → delete the project's `Library/` folder → reopen (safe: it is a cache; large projects reimport for a while)
+2. Recurs intermittently → delete only `Library/ArtifactDB` and `Library/SourceAssetDB`
+3. Identify the offending asset: check `Editor.log` tail for the last asset processed (**Help → Editor Log**, or `%LOCALAPPDATA%\Unity\Editor\Editor.log` on Windows, `~/Library/Logs/Unity/Editor.log` on macOS)
+
+### Shader compilation stuck / GPU errors
+
+- Delete `Library/ShaderCache/` → restart
+- DX12 crashes → force DX11: enable **Auto Graphics API** off + put D3D11 first (Player Settings → Other Settings), or launch with `-force-d3d11`
+- Blank/black editor window → close Unity, delete `Library/Preferences/` (resets editor window layout)
+
+### Project won't open — version mismatch
+
+- "This project was created with a newer version of Unity" → install that exact version via Unity Hub (major.minor must match)
+- Never open a project in a newer Unity version without a backup/commit — upgrades are one-way (assets + `ProjectSettings/` are rewritten)
+
+### After a crash
+
+- Relaunch offers **scene recovery** — accept it to salvage unsaved scene changes
+- Substantial loss → check version control first; `Temp/` backups are unreliable (cleaned on next launch)
+
+### Safe Mode (Unity 2022.1+)
+
+Compile errors at startup open **Safe Mode**: a limited editor with scripts not compiling. Fix the errors listed in Console, then click **Exit Safe Mode**. Do not delete `Library/` while in Safe Mode — resolve the compile errors first.
 
 ## Maintaining This Skill
 

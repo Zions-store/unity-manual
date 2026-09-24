@@ -33,6 +33,7 @@ class BlitRenderPass : ScriptableRenderPass {
 ## Upgrading from 2022.3
 - Back up URP Asset before upgrading
 - Custom Renderer Features: rewrite using RecordRenderGraph if they use CommandBuffer directly
+- **Compatibility Mode escape hatch**: URP Asset → Rendering → **Compatibility Mode** (Render Graph Disabled) runs legacy CommandBuffer-based Renderer Features unchanged — use as a temporary bridge only; it forfeits RenderGraph performance benefits
 - Adaptive Probe Volumes require scene re-baking
 - Check all shaders for compatibility (ShaderGraph auto-upgrades, hand-written shaders may need updates)
 - GPU Resident Drawer disabled by default — enable in URP Asset for CPU gains
