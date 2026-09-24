@@ -146,7 +146,7 @@ Folder names below are **reserved** — each carries compile/build semantics reg
 | `Gizmos/` (root only) | Icons for `Gizmos.DrawIcon()` |
 | `Plugins/` | Native plugins & platform-specific code (special subfolder rules per platform) |
 | `Resources/` | Assets loadable at runtime via `Resources.Load("path")` — bypasses normal references; prefer Addressables/serialization for new code |
-| `StreamingAssets/` (root only) | Files copied **verbatim** into the build, untouched by importers — configs, video, SQLite. Path: `Application.streamingAssetsPath`. **Read-only at runtime**; on Android/Web it is a URL (`jar:` / `http:`) — load with `UnityWebRequest`, not `File.ReadAllText` |
+| `StreamingAssets/` (root only) | Files copied **verbatim** into the build, untouched by importers (configs, video, SQLite). Path: `Application.streamingAssetsPath`. Read-only at runtime; on Android/Web it is a URL — load via `UnityWebRequest`, not `File.ReadAllText` |
 
 Hidden/ignored: folders starting with `.` or `~`, names ending in `~`, `cvs`, and `.tmp` files are never imported (except dot-folders inside StreamingAssets, which are copied).
 
