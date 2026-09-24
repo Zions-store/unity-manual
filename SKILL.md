@@ -94,6 +94,7 @@ Set in **Edit → Project Settings → Editor**:
 - **Version Control Mode**: Visible Meta Files
 
 **Required `.gitignore` entries:**
+
 ```
 [Ll]ibrary/
 [Tt]emp/
@@ -138,7 +139,7 @@ Every entity in Unity is a GameObject. GameObjects themselves do nothing — the
 - **GameObject** = identity (name, tag, layer, active state) + transform + component list
 - **Component** = behaviour (Rigidbody, Collider, MeshRenderer, custom scripts)
 - **Transform** = always present, cannot be removed; position/rotation/scale in local and world space
-- **AddComponent<T>()** adds at runtime; **GetComponent<T>()** retrieves; **TryGetComponent<T>()** is allocation-free
+- **`AddComponent<T>()`** adds at runtime; **`GetComponent<T>()`** retrieves; **`TryGetComponent<T>()`** is allocation-free
 
 ### Common Patterns
 
@@ -346,6 +347,7 @@ The most common Unity error: `NullReferenceException`. You tried to use somethin
 | Event listener on destroyed object | Always unsubscribe in `OnDisable()` / `OnDestroy()` |
 
 **Defensive pattern:**
+
 ```csharp
 [SerializeField] private Rigidbody rb; // assign in Inspector
 
@@ -395,6 +397,7 @@ public class Health : MonoBehaviour
     }
 }
 ```
+
 In Inspector, click `+` on `OnDeath`, drag a GameObject, pick a method — no code needed.
 
 ### 3. C# event / Action (code-only, performant)
@@ -653,6 +656,7 @@ Baking requires objects to be marked **Static** (Inspector → Static checkbox) 
 Tags and Layers are metadata for identifying and filtering GameObjects:
 
 **Tag — identifies a specific object:**
+
 ```csharp
 if (other.CompareTag("Player")) { /* hit the player */ }
 GameObject player = GameObject.FindWithTag("Player"); // returns one object
@@ -663,6 +667,7 @@ gameObject.tag = "Enemy";
 ```
 
 **Layer — filters rendering and collision:**
+
 ```csharp
 // Check if an object is on a specific layer
 if (other.gameObject.layer == LayerMask.NameToLayer("Enemy"))
@@ -912,6 +917,7 @@ Unity's Humanoid Avatar system enables reusing animations across different chara
 3. **Retarget to another model**: Select animator's Avatar → set it to any Humanoid skeleton. Animations auto-retarget — different proportions handled.
 
 **Sharing animations across models:**
+
 ```csharp
 // Import animation once, use on multiple characters:
 // Set "Copy From Other Avatar" in the animation import settings
@@ -1278,6 +1284,7 @@ public class ObjectPool : MonoBehaviour
 **Unity's built-in:** `UnityEngine.Pool.ObjectPool<T>` and `UnityEngine.Pool.GenericPool<T>` (Unity 2021+) provide allocation-free pools with less boilerplate.
 
 ### When to Pool
+
 | Pool | Don't Pool |
 |---|---|
 | Bullets, projectiles | One-off level geometry |

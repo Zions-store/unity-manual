@@ -21,6 +21,7 @@ SPDX-License-Identifier: GPL-3.0-or-later
 - Some 2022.3 Renderer Features are incompatible with Render Graph (must use RenderGraph-based passes)
 
 ## Common Unity 6 Patterns
+
 ```csharp
 // RenderGraph-based Renderer Feature (new API)
 class BlitRenderPass : ScriptableRenderPass {
